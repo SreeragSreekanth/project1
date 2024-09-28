@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino Bluetooth Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #data { font-size: 24px; margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>Read Data from Arduino via Bluetooth</h1>
+    <button onclick="connectBluetooth()">Connect to Bluetooth</button>
+    <div id="data">No data received yet...</div>
+
+    <script>
+        let bluetoothDevice;
+        let server;
+        let service;
+        let characteristic;
+
+        async function connectBluetooth() {
+            try {
+                // Request Bluetooth device
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'HC' }],
+                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] // HC-05 SPP service
+                });
+
+                // Connect to the device
+                server = await bluetoothDevice.gatt.connect();
+                service = await server.getPrimaryService('00001101-0000-1000-8000-00805f9b34fb');
+
+                // Change this to the correct characteristic UUID for your device
+                characteristic = await service.getCharacteristic('your-characteristic-uuid-here');
+
+                // Start listening for data
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', handleData);
+            } catch (error) {
+                console.log('Connection failed', error);
+            }
+        }
+
+        function handleData(event) {
+            const value = new TextDecoder().decode(event.target.value);
+            document.getElementById('data').textContent = `Received Data: ${value}`;
+        }
+    </script>
+</body>
+</html>
